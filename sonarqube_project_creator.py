@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+"""
+Script to automate adding GitHub repositories to a SonarQube Cloud organization.
+
+This script:
+1. Gets the list of available repositories for a SonarCloud organization
+2. Extracts installation keys for each repository
+3. Provisions selected repositories to the SonarCloud organization
+"""
+
+import requests
+import argparse
+import json
+import sys
+from typing import List, Dict, Any, Optional
+import os
+from getpass import getpass
+
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Add GitHub repositories to a SonarQube Cloud organization."
+    )
+    parser.add_argument(
+        "--organization", "-o", 
+        required=True,
+        help="SonarQube Cloud organization key"
+    )
+    parser.add_argument(
+        "--token", "-t",
+        help="SonarQube Cloud user token (if not provided, will prompt or use SONAR_TOKEN env var)"
+    )
+    parser.add_argument(
+        "--all", "-a",
+        action="store_true",
+        help="Add all available repositories (otherwise will prompt for selection)"
+    )
+    parser.add_argument(
+        "--filter", "-f",
+        help="Filter repositories by label (case-insensitive substring match)"
+    )
+    parser.add_argument(
+        "--output", 
+        help="Output file to save installation keys (JSON format)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without making actual changes"
+    )
+    return parser.parse_args()
+
+
+def get_sonar_token(args) -> str:
+    """Get SonarQube token from args, environment or prompt."""
+    if args.token:
+        return args.token
+    
+    token = os.environ.get("SONAR_TOKEN")
+    if token:
+        return token
+    
+    return getpass("Enter your SonarQube token: ")
+
+
+def list_available_repositories(organization: str, token: str) -> List[Dict[str, Any]]:
+    """
+    Get list of available repositories that can be added to SonarCloud organization.
+    
+    Args:
+        organization: SonarQube Cloud organization key
+        token: SonarQube token
+        
+    Returns:
+        List of repositories with their details
+    """
+    url = "https://sonarcloud.io/api/alm_integration/list_repositories"
+    params = {"organization": organization}
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(url, params=params, headers=headers)
+        response.raise_for_status()
+        
+        return response.json().get("repositories", [])
+    except requests.RequestException as e:
+        print(f"Error fetching repositories: {e}")
+        if hasattr(e, "response") and e.response:
+            print(f"Response: {e.response.text}")
+        sys.exit(1)
+
+
+def provision_projects(organization: str, token: str, installation_keys: List[str]) -> Dict[str, Any]:
+    """
+    Provision projects to SonarCloud organization.
+    
+    Args:
+        organization: SonarQube Cloud organization key
+        token: SonarQube token
+        installation_keys: List of installation keys to provision
+        
+    Returns:
+        API response data
+    """
+    url = "https://sonarcloud.io/api/alm_integration/provision_projects"
+    params = {
+        "organization": organization,
+    }
+    # Installation keys need to be passed as multiple parameters with the same name
+    for key in installation_keys:
+        params.setdefault("installationKeys", []).append(key)
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    try:
+        # Convert the special case of multiple params with same name
+        encoded_params = "&".join([f"installationKeys={key}" for key in installation_keys]) 
+        encoded_params += f"&organization={organization}"
+        
+        response = requests.post(
+            url, 
+            data=encoded_params,
+            headers=headers
+        )
+        response.raise_for_status()
+        
+        return response.json()
+    except requests.RequestException as e:
+        print(f"Error provisioning projects: {e}")
+        if hasattr(e, "response") and e.response:
+            print(f"Response: {e.response.text}")
+        sys.exit(1)
+
+
+def select_repositories(repositories: List[Dict[str, Any]], filter_text: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Allow user to select repositories from list.
+    
+    Args:
+        repositories: List of repositories
+        filter_text: Optional text to filter repositories
+        
+    Returns:
+        List of selected repositories
+    """
+    if filter_text:
+        filtered_repos = [
+            repo for repo in repositories 
+            if filter_text.lower() in repo.get("label", "").lower()
+        ]
+    else:
+        filtered_repos = repositories
+    
+    if not filtered_repos:
+        print("No repositories match the filter criteria.")
+        return []
+    
+    print("\nAvailable repositories:")
+    for i, repo in enumerate(filtered_repos, 1):
+        print(f"{i}. {repo.get('label')} ({repo.get('slug')})")
+    
+    selection = input("\nEnter numbers of repositories to add (comma-separated) or 'all': ")
+    
+    if selection.lower() == "all":
+        return filtered_repos
+    
+    try:
+        indices = [int(idx.strip()) - 1 for idx in selection.split(",")]
+        return [filtered_repos[idx] for idx in indices if 0 <= idx < len(filtered_repos)]
+    except (ValueError, IndexError):
+        print("Invalid selection. Please provide valid numbers.")
+        return select_repositories(repositories, filter_text)
+
+
+def save_installation_keys(repositories: List[Dict[str, Any]], filename: str):
+    """Save installation keys to a file."""
+    data = {
+        "installationKeys": [repo.get("installationKey") for repo in repositories],
+        "repositories": [{
+            "name": repo.get("name"),
+            "slug": repo.get("slug"),
+            "installationKey": repo.get("installationKey")
+        } for repo in repositories]
+    }
+    
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=2)
+    
+    print(f"Installation keys saved to {filename}")
+
+
+def main():
+    """Main function to run the script."""
+    args = parse_arguments()
+    organization = args.organization
+    token = get_sonar_token(args)
+    
+    print(f"Fetching available repositories for organization '{organization}'...")
+    repositories = list_available_repositories(organization, token)
+    
+    if not repositories:
+        print("No repositories found that can be added.")
+        sys.exit(0)
+    
+    print(f"Found {len(repositories)} repositories.")
+    
+    if args.all:
+        selected_repos = repositories
+        if args.filter:
+            selected_repos = [
+                repo for repo in repositories 
+                if args.filter.lower() in repo.get("label", "").lower()
+            ]
+        print(f"Selected all {len(selected_repos)} repositories.")
+    else:
+        selected_repos = select_repositories(repositories, args.filter)
+    
+    if not selected_repos:
+        print("No repositories selected. Exiting.")
+        sys.exit(0)
+    
+    # Extract installation keys
+    installation_keys = [repo.get("installationKey") for repo in selected_repos]
+    
+    # Save installation keys if output file specified
+    if args.output:
+        save_installation_keys(selected_repos, args.output)
+    
+    # Confirm with user
+    repo_labels = [repo.get("label") for repo in selected_repos]
+    print(f"\nAbout to add {len(selected_repos)} repositories to SonarQube Cloud:")
+    for label in repo_labels:
+        print(f"- {label}")
+    
+    confirmation = input("\nContinue? (y/N): ")
+    if confirmation.lower() != "y":
+        print("Operation cancelled.")
+        sys.exit(0)
+    
+    print("\nProvisioning projects in SonarQube Cloud...")
+    result = provision_projects(organization, token, installation_keys)
+    
+    print("\nProject provisioning completed!")
+    print(f"Projects added: {len(result.get('projects', []))}")
+    
+    for project in result.get("projects", []):
+        print(f"- {project.get('name')} (Key: {project.get('key')})")
+    
+    if "warnings" in result and result["warnings"]:
+        print("\nWarnings:")
+        for warning in result["warnings"]:
+            print(f"- {warning}")
+
+
+if __name__ == "__main__":
+    main()
