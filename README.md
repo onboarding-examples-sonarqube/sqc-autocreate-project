@@ -1,0 +1,1 @@
+# sqc-autocreate-project
