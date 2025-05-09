@@ -49,6 +49,11 @@ def parse_arguments():
         action="store_true",
         help="Show what would be done without making actual changes"
     )
+    parser.add_argument(
+        "--repos",
+        nargs="+",
+        help="Specify one or more repository labels to add (exact match, case-sensitive)"
+    )
     return parser.parse_args()
 
 
@@ -132,12 +137,6 @@ def provision_projects(organization: str, token: str, installation_keys: List[st
         API response data
     """
     url = "https://sonarcloud.io/api/alm_integration/provision_projects"
-    params = {
-        "organization": organization,
-    }
-    # Installation keys need to be passed as multiple parameters with the same name
-    for key in installation_keys:
-        params.setdefault("installationKeys", []).append(key)
     
     headers = {
         "Authorization": f"Bearer {token}",
@@ -145,15 +144,22 @@ def provision_projects(organization: str, token: str, installation_keys: List[st
     }
     
     try:
-        # Convert the special case of multiple params with same name
-        encoded_params = "&".join([f"installationKeys={key}" for key in installation_keys]) 
-        encoded_params += f"&organization={organization}"
+        # Join installation keys as a comma-separated string
+        comma_separated_keys = ",".join(installation_keys)
         
+        # Build the data payload with comma-separated installation keys
+        data = {
+            "organization": organization,
+            "installationKeys": comma_separated_keys
+        }
+        
+        # Use the requests library with proper encoding
         response = requests.post(
-            url, 
-            data=encoded_params,
+            url,
+            data=data,
             headers=headers
         )
+        
         response.raise_for_status()
         
         return response.json()
@@ -273,17 +279,67 @@ def main():
     
     print(f"Found {len(repositories)} repositories that can be added to SonarQube Cloud.")
     
-    # Continue with filtering and normal flow
-    if args.all:
+    # Handle repository selection based on arguments
+    if args.repos:
+        # If specific repos are specified, select them by exact label match
+        repo_labels = args.repos
+        filtered_repos = []
+        
+        # Debug output to verify label matching
+        print(f"Looking for repositories with labels: {', '.join(repo_labels)}")
+        
+        # Create a case-insensitive matching for better user experience
+        for repo in repositories:
+            repo_label = repo.get("label", "")
+            # Check if the repo label is in the requested labels (case insensitive)
+            if any(label.lower() == repo_label.lower() for label in repo_labels):
+                filtered_repos.append(repo)
+        
+        if not filtered_repos:
+            print(f"None of the specified repositories were found or are available to add.")
+            sys.exit(0)
+        
+        # Report if some repos weren't found
+        found_labels = [repo.get("label") for repo in filtered_repos]
+        print(f"Found repositories: {', '.join(found_labels)}")
+        
+        not_found = []
+        for label in repo_labels:
+            if not any(label.lower() == found.lower() for found in found_labels):
+                not_found.append(label)
+        
+        if not_found:
+            print(f"\nWarning: The following repositories were not found or are already linked:")
+            for label in not_found:
+                print(f"- {label}")
+        
+        print(f"\nSelected {len(filtered_repos)} repositories:")
+        for repo in filtered_repos:
+            print(f"- {repo.get('label')} ({repo.get('slug')})")
+        
+        selected_repos = filtered_repos
+    elif args.filter:
+        # If filter is specified, automatically select all matching repositories without prompting
+        filtered_repos = [
+            repo for repo in repositories 
+            if args.filter.lower() in repo.get("label", "").lower()
+        ]
+        if not filtered_repos:
+            print(f"No available repositories match the filter criteria '{args.filter}'.")
+            sys.exit(0)
+        
+        print(f"\nAutomatically selected {len(filtered_repos)} repositories matching filter '{args.filter}':")
+        for repo in filtered_repos:
+            print(f"- {repo.get('label')} ({repo.get('slug')})")
+        
+        selected_repos = filtered_repos
+    elif args.all:
+        # Select all repositories if --all is specified
         selected_repos = repositories
-        if args.filter:
-            selected_repos = [
-                repo for repo in repositories 
-                if args.filter.lower() in repo.get("label", "").lower()
-            ]
         print(f"Selected all {len(selected_repos)} repositories.")
     else:
-        selected_repos = select_repositories(repositories, args.filter)
+        # Otherwise use interactive selection
+        selected_repos = select_repositories(repositories, None)
     
     if not selected_repos:
         print("No repositories selected. Exiting.")
@@ -291,10 +347,6 @@ def main():
     
     # Extract installation keys
     installation_keys = [repo.get("installationKey") for repo in selected_repos]
-    
-    # Save installation keys if output file specified
-    if args.output:
-        save_installation_keys(selected_repos, args.output)
     
     # Confirm with user
     repo_labels = [repo.get("label") for repo in selected_repos]
@@ -308,13 +360,24 @@ def main():
         sys.exit(0)
     
     print("\nProvisioning projects in SonarQube Cloud...")
+    
+    # Handle dry run mode
+    if args.dry_run:
+        print("DRY RUN MODE: Would provision the following projects:")
+        for label in repo_labels:
+            print(f"- {label}")
+        print("No changes were made to SonarQube Cloud.")
+        sys.exit(0)
+    
     result = provision_projects(organization, token, installation_keys)
     
     print("\nProject provisioning completed!")
     print(f"Projects added: {len(result.get('projects', []))}")
     
-    for project in result.get("projects", []):
-        print(f"- {project.get('name')} (Key: {project.get('key')})")
+    for project in result.get('projects', []):
+        # Just use the project key from the response
+        project_key = project.get('projectKey')
+        print(f"- Project Key: {project_key}")
     
     if "warnings" in result and result["warnings"]:
         print("\nWarnings:")

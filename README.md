@@ -4,8 +4,8 @@ A utility script to automate the process of adding GitHub repositories to a Sona
 
 ## Features
 
-- Lists available GitHub repositories that can be added to SonarQube Cloud
-- Allows filtering repositories by name using case-insensitive matching
+- Lists available repositories that can be added to SonarQube Cloud Organization
+- Allows adding specific repositories by filtering by label
 - Supports automatic skipping of repositories already added to SonarQube Cloud
 - Provides options for automated or interactive selection of repositories
 - Can export repository information to a JSON file for reference
@@ -49,6 +49,7 @@ python sonarqube_project_creator.py --organization your-organization-key --token
 | `--token` | `-t` | SonarQube Cloud user token (if not provided, will look for SONAR_TOKEN env var or prompt) |
 | `--all` | `-a` | Add all available repositories without prompting for selection |
 | `--filter` | `-f` | Filter repositories by label (case-insensitive substring match) |
+| `--repos` | | Specify one or more repository labels to add (exact match, case-sensitive) |
 | `--output` | | Output file to save repository info (JSON format). If specified, only fetches repositories without provisioning |
 | `--dry-run` | | Show what would be done without making actual changes |
 
@@ -61,15 +62,20 @@ python sonarqube_project_creator.py --organization your-organization-key --token
 
 2. **Add all repositories containing a specific term**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org --all --filter "api"
+   python sonarqube_project_creator.py --organization your-org --filter "api"
    ```
 
-3. **Interactive selection with filtering**:
+3. **Add specific repositories by exact name**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org --filter "service"
+   python sonarqube_project_creator.py --organization your-org --repos "repo1" "repo2" "repo3"
    ```
 
-4. **Preview without making changes**:
+4. **Interactive selection with filtering**:
+   ```bash
+   python sonarqube_project_creator.py --organization your-org
+   ```
+
+5. **Preview without making changes**:
    ```bash
    python sonarqube_project_creator.py --organization your-org --all --dry-run
    ```
@@ -111,3 +117,4 @@ When using the `--output` option, the script generates a JSON file with detailed
 - Repositories already added to SonarQube Cloud are automatically skipped during provisioning
 - The script can handle a large number of repositories and provides clear output about what's being processed
 - Use the `--output` option first to explore available repositories before applying filters
+- The `--repos` parameter takes precedence over `--filter` and `--all` when specified

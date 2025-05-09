@@ -1,0 +1,127 @@
+{
+  "repositories": [
+    {
+      "label": "dotnet-example",
+      "installationKey": "onboarding-examples-sonarqube/dotnet-example|899107956",
+      "slug": "onboarding-examples-sonarqube/dotnet-example",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube-gh_dotnet-example",
+          "name": "onboarding-examples-sonarqube-gh_dotnet-example"
+        }
+      ]
+    },
+    {
+      "label": "gradle-example",
+      "installationKey": "onboarding-examples-sonarqube/gradle-example|899108073",
+      "slug": "onboarding-examples-sonarqube/gradle-example",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube-gh_gradle-example",
+          "name": "onboarding-examples-sonarqube-gh_gradle-example"
+        }
+      ]
+    },
+    {
+      "label": "python-example",
+      "installationKey": "onboarding-examples-sonarqube/python-example|900955443",
+      "slug": "onboarding-examples-sonarqube/python-example",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube-gh_python-example",
+          "name": "onboarding-examples-sonarqube-gh_python-example"
+        }
+      ]
+    },
+    {
+      "label": "sonar-scanner-cli-example",
+      "installationKey": "onboarding-examples-sonarqube/sonar-scanner-cli-example|900991886",
+      "slug": "onboarding-examples-sonarqube/sonar-scanner-cli-example",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube-gh_sonar-scanner-cli-example",
+          "name": "onboarding-examples-sonarqube-gh_sonar-scanner-cli-example"
+        }
+      ]
+    },
+    {
+      "label": "maven-example",
+      "installationKey": "onboarding-examples-sonarqube/maven-example|900992081",
+      "slug": "onboarding-examples-sonarqube/maven-example",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube-gh_maven-example",
+          "name": "maven-example"
+        }
+      ]
+    },
+    {
+      "label": "python-vulnerable-example",
+      "installationKey": "onboarding-examples-sonarqube/python-vulnerable-example|956616399",
+      "slug": "onboarding-examples-sonarqube/python-vulnerable-example",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube_python-vulnerable-example",
+          "name": "python-vulnerable-example"
+        }
+      ]
+    },
+    {
+      "label": "github_orquestrator",
+      "installationKey": "onboarding-examples-sonarqube/github_orquestrator|956738472",
+      "slug": "onboarding-examples-sonarqube/github_orquestrator",
+      "private": false,
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube_github_orquestrator",
+          "name": "github_orquestrator"
+        }
+      ]
+    },
+    {
+      "label": "jsts-vulner-example-juice-shop",
+      "installationKey": "onboarding-examples-sonarqube/jsts-vulner-example-juice-shop|968242253",
+      "slug": "onboarding-examples-sonarqube/jsts-vulner-example-juice-shop",
+      "private": false,
+      "alreadyAdded": false,
+      "linkedProjects": []
+    },
+    {
+      "label": "monorepo-example",
+      "installationKey": "onboarding-examples-sonarqube/monorepo-example|971646668",
+      "slug": "onboarding-examples-sonarqube/monorepo-example",
+      "private": false,
+      "alreadyAdded": false,
+      "linkedProjects": []
+    },
+    {
+      "label": "sqc-autocreate-project",
+      "installationKey": "onboarding-examples-sonarqube/sqc-autocreate-project|980732269",
+      "slug": "onboarding-examples-sonarqube/sqc-autocreate-project",
+      "private": false,
+      "alreadyAdded": false,
+      "linkedProjects": []
+    },
+    {
+      "label": "crdt",
+      "installationKey": "onboarding-examples-sonarqube/crdt|980795586",
+      "slug": "onboarding-examples-sonarqube/crdt",
+      "private": true,
+      "alreadyAdded": false,
+      "linkedProjects": []
+    }
+  ]
+}
