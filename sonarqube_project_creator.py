@@ -296,7 +296,7 @@ def main():
                 filtered_repos.append(repo)
         
         if not filtered_repos:
-            print(f"None of the specified repositories were found or are available to add.")
+            print("None of the specified repositories were found or are available to add.")
             sys.exit(0)
         
         # Report if some repos weren't found
@@ -309,7 +309,7 @@ def main():
                 not_found.append(label)
         
         if not_found:
-            print(f"\nWarning: The following repositories were not found or are already linked:")
+            print("\nWarning: The following repositories were not found or are already linked:")
             for label in not_found:
                 print(f"- {label}")
         

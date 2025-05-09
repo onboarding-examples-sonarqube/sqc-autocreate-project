@@ -70,26 +70,16 @@
       "installationKey": "onboarding-examples-sonarqube/python-vulnerable-example|956616399",
       "slug": "onboarding-examples-sonarqube/python-vulnerable-example",
       "private": false,
-      "alreadyAdded": true,
-      "linkedProjects": [
-        {
-          "key": "onboarding-examples-sonarqube_python-vulnerable-example",
-          "name": "python-vulnerable-example"
-        }
-      ]
+      "alreadyAdded": false,
+      "linkedProjects": []
     },
     {
       "label": "github_orquestrator",
       "installationKey": "onboarding-examples-sonarqube/github_orquestrator|956738472",
       "slug": "onboarding-examples-sonarqube/github_orquestrator",
       "private": false,
-      "alreadyAdded": true,
-      "linkedProjects": [
-        {
-          "key": "onboarding-examples-sonarqube_github_orquestrator",
-          "name": "github_orquestrator"
-        }
-      ]
+      "alreadyAdded": false,
+      "linkedProjects": []
     },
     {
       "label": "jsts-vulner-example-juice-shop",
@@ -112,8 +102,13 @@
       "installationKey": "onboarding-examples-sonarqube/sqc-autocreate-project|980732269",
       "slug": "onboarding-examples-sonarqube/sqc-autocreate-project",
       "private": false,
-      "alreadyAdded": false,
-      "linkedProjects": []
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube_sqc-autocreate-project",
+          "name": "sqc-autocreate-project"
+        }
+      ]
     },
     {
       "label": "crdt",
