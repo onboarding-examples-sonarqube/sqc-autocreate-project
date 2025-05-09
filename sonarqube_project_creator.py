@@ -42,7 +42,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--output", 
-        help="Output file to save installation keys (JSON format)"
+        help="Output file to save repository info (JSON format). If specified, only fetches repositories without provisioning."
     )
     parser.add_argument(
         "--dry-run",
@@ -89,6 +89,34 @@ def list_available_repositories(organization: str, token: str) -> List[Dict[str,
         if hasattr(e, "response") and e.response:
             print(f"Response: {e.response.text}")
         sys.exit(1)
+
+
+def filter_unlinked_repositories(repositories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Filter repositories to include only those not yet added to SonarQube Cloud.
+    
+    Args:
+        repositories: List of repositories
+        
+    Returns:
+        List of repositories that haven't been added to SonarQube Cloud
+    """
+    unlinked_repos = []
+    linked_repos = []
+    
+    for repo in repositories:
+        if not repo.get("linkedProjects"):
+            unlinked_repos.append(repo)
+        else:
+            linked_repos.append(repo)
+    
+    if linked_repos:
+        print(f"\nSkipping {len(linked_repos)} repositories already added to SonarQube Cloud:")
+        for repo in linked_repos:
+            project_names = [p.get("name") for p in repo.get("linkedProjects", [])]
+            print(f"- {repo.get('label')} (linked to: {', '.join(project_names)})")
+    
+    return unlinked_repos
 
 
 def provision_projects(organization: str, token: str, installation_keys: List[str]) -> Dict[str, Any]:
@@ -176,6 +204,25 @@ def select_repositories(repositories: List[Dict[str, Any]], filter_text: Optiona
         return select_repositories(repositories, filter_text)
 
 
+def save_repository_info(repositories: List[Dict[str, Any]], filename: str):
+    """Save repository information to a file."""
+    data = {
+        "repositories": [{
+            "label": repo.get("label"),
+            "installationKey": repo.get("installationKey"),
+            "slug": repo.get("slug"),
+            "private": repo.get("private", False),
+            "alreadyAdded": bool(repo.get("linkedProjects")),
+            "linkedProjects": repo.get("linkedProjects", [])
+        } for repo in repositories]
+    }
+    
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=2)
+    
+    print(f"Repository information saved to {filename}")
+
+
 def save_installation_keys(repositories: List[Dict[str, Any]], filename: str):
     """Save installation keys to a file."""
     data = {
@@ -208,6 +255,25 @@ def main():
     
     print(f"Found {len(repositories)} repositories.")
     
+    # If output file is specified, save all repositories to file and exit
+    # This should happen before filtering so users can first see all available repositories
+    if args.output:
+        save_repository_info(repositories, args.output)
+        print(f"Repository information for all {len(repositories)} repositories saved to {args.output}.")
+        print("Use this file to identify labels for filtering in subsequent runs.")
+        print("Exiting without provisioning projects.")
+        sys.exit(0)
+    
+    # Filter out repositories that have already been added to SonarQube Cloud
+    repositories = filter_unlinked_repositories(repositories)
+    
+    if not repositories:
+        print("No repositories available to add (all are already linked to SonarQube Cloud).")
+        sys.exit(0)
+    
+    print(f"Found {len(repositories)} repositories that can be added to SonarQube Cloud.")
+    
+    # Continue with filtering and normal flow
     if args.all:
         selected_repos = repositories
         if args.filter:
