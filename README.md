@@ -1,6 +1,6 @@
 # SonarQube Cloud Project Creator
 
-A utility script to automate the process of adding GitHub repositories to a SonarQube Cloud organization.
+A utility script to automate the process of adding repositories from your DevOps Platform to a SonarQube Cloud organization.
 
 ## Features
 
@@ -30,8 +30,6 @@ pip install requests
 Basic usage requires an organization key and token:
 
 ```bash
-# Basic usage with interactive repository selection
-python sonarqube_project_creator.py --organization your-organization-key
 
 # Using environment variable for token
 export SONAR_TOKEN=your-sonarqube-token
@@ -57,27 +55,27 @@ python sonarqube_project_creator.py --organization your-organization-key --token
 
 1. **List all available repositories**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org --output repos.json
+   python sonarqube_project_creator.py --organization your-org --output repos.json --token your-sonarqube-token
    ```
 
 2. **Add all repositories containing a specific term**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org --filter "api"
+   python sonarqube_project_creator.py --organization your-org --filter "api" --token your-sonarqube-token
    ```
 
 3. **Add specific repositories by exact name**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org --repos "repo1" "repo2" "repo3"
+   python sonarqube_project_creator.py --organization your-org --repos "repo1" "repo2" "repo3" --token your-sonarqube-token
    ```
 
 4. **Interactive selection with filtering**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org
+   python sonarqube_project_creator.py --organization your-org --token your-sonarqube-token
    ```
 
 5. **Preview without making changes**:
    ```bash
-   python sonarqube_project_creator.py --organization your-org --all --dry-run
+   python sonarqube_project_creator.py --organization your-org --all --dry-run --token your-sonarqube-token
    ```
 
 ## Output File Format
@@ -118,3 +116,4 @@ When using the `--output` option, the script generates a JSON file with detailed
 - The script can handle a large number of repositories and provides clear output about what's being processed
 - Use the `--output` option first to explore available repositories before applying filters
 - The `--repos` parameter takes precedence over `--filter` and `--all` when specified
+- The script will provide a list of the ProjectKey's for the projects created
