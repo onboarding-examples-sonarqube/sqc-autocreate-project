@@ -78,8 +78,13 @@
       "installationKey": "onboarding-examples-sonarqube/github_orquestrator|956738472",
       "slug": "onboarding-examples-sonarqube/github_orquestrator",
       "private": false,
-      "alreadyAdded": false,
-      "linkedProjects": []
+      "alreadyAdded": true,
+      "linkedProjects": [
+        {
+          "key": "onboarding-examples-sonarqube_github_orquestrator",
+          "name": "github_orquestrator"
+        }
+      ]
     },
     {
       "label": "jsts-vulner-example-juice-shop",
